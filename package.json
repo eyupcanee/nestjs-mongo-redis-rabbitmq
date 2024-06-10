@@ -26,6 +26,7 @@
     "@nestjs/mongoose": "^10.0.6",
     "@nestjs/platform-express": "^10.0.0",
     "cache-manager": "^5.6.1",
+    "cache-manager-ioredis-yet": "^2.1.1",
     "dotenv": "^16.4.5",
     "mongoose": "^8.4.1",
     "reflect-metadata": "^0.2.0",
