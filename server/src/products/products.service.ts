@@ -3,17 +3,21 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Cache } from 'cache-manager';
 import { Model, ObjectId } from 'mongoose';
 import { Product, ProductResponseModel } from './product.model';
+import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
 export class ProductService {
   constructor(
     @Inject('CACHE_MANAGER') private readonly cacheManager: Cache,
+    @Inject('PRODUCTS_MQ_SERVICE')
+    private readonly rabbitMqService: ClientProxy,
     @InjectModel('Product') private readonly productModel: Model<Product>,
   ) {}
 
   async getAllProducts(): Promise<ProductResponseModel> {
     try {
       const result = await this.productModel.find();
+      this.rabbitMqService.emit('product-getall', result);
       return {
         message: 'All products are here',
         products: result,
@@ -28,6 +32,7 @@ export class ProductService {
       const result = await this.productModel.findById(productId);
 
       if (result) {
+        this.rabbitMqService.emit('product.info', result);
         return {
           message: 'Here is your product',
           products: result,
@@ -52,8 +57,9 @@ export class ProductService {
         price: productPrice,
       });
 
-      await newProduct.save();
+      const result = await newProduct.save();
       await this.cacheManager.reset();
+      this.rabbitMqService.emit('product-insert', result);
       const message: string = 'Product added successfully.';
       return { message: message };
     } catch (error) {
